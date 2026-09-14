@@ -8,5 +8,28 @@
 .auth-form{text-align:left;display:flex;flex-direction:column;gap:16px;margin-bottom:16px}
 .auth-form label span{font-weight:700;font-size:13px;display:block;margin-bottom:7px}
 .auth-form input{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:#fff;color:var(--ink);outline-color:var(--green)}
-.auth-toggle{background:none;border:0;cursor:pointer;font-size:12px}footer{max-width:1080px;margin:0 auto;padding:0 38px 28px;display:flex;justify-content:space-between;color:#9ba69f;font-size:10px}footer span:first-child{font-weight:700;color:var(--green)}
+.auth-toggle{background:none;border:0;cursor:pointer;font-size:12px}
+.profile-card{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:22px 24px;margin-bottom:28px}
+.tag-pills.wrap-left{justify-content:flex-start;min-height:22px}
+.tag-pill.removable{display:inline-flex;align-items:center;gap:7px;padding-right:8px}
+.tag-pill.removable button{border:0;background:none;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0}
+.tag-pill.removable button:hover{color:var(--coral)}
+.inline-add-form{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.inline-add-form input{flex:1;min-width:160px;border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#fff;color:var(--ink);outline-color:var(--green)}
+.secondary-button{border:1px solid var(--green);background:#fff;color:var(--green);border-radius:10px;padding:11px 18px;font-weight:700;cursor:pointer;white-space:nowrap}
+.secondary-button:hover{background:var(--sage)}
+.med-list{display:flex;flex-direction:column;gap:10px}
+.med-item{display:flex;align-items:center;gap:14px;padding:13px 15px;border:1px solid var(--line);border-radius:12px}
+.med-item input[type=checkbox]{width:20px;height:20px;accent-color:var(--green);cursor:pointer;flex-shrink:0}
+.med-item .med-text{flex:1}
+.med-item .med-text strong{display:block;font-size:13px}
+.med-item .med-text span{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.med-item.taken .med-text strong{color:var(--muted);text-decoration:line-through}
+.med-item button.remove-med{border:0;background:none;cursor:pointer;color:var(--muted);font-size:15px;padding:4px}
+.med-item button.remove-med:hover{color:var(--coral)}
+.empty-note{color:var(--muted);font-size:12px}
+.time-field{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+.time-field input{border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;color:var(--ink)}
+.reminder-status{font-size:11px;color:var(--muted);margin-top:12px}
+.reminder-status button{border:0;background:none;color:var(--green);font-weight:700;cursor:pointer;padding:0;font-size:11px;text-decoration:underline}footer{max-width:1080px;margin:0 auto;padding:0 38px 28px;display:flex;justify-content:space-between;color:#9ba69f;font-size:10px}footer span:first-child{font-weight:700;color:var(--green)}
 @media(max-width:700px){.app-shell{padding:0 20px}.topbar{height:69px}.nav-tabs{gap:15px}.hero{min-height:280px}.hero h1,.page-heading h1{font-size:42px}.hero-orb{width:105px;height:105px;margin-right:0;font-size:28px}.today-card{align-items:flex-start}.tag-pills{justify-content:flex-start}.insights-grid{grid-template-columns:1fr}.section-heading{margin-top:38px}.tag-grid{grid-template-columns:repeat(2,1fr)}footer{padding-left:20px;padding-right:20px}.chart-legend{font-size:9px}.history-summary{gap:22px}}
