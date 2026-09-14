@@ -135,21 +135,173 @@ function setView() {
   }
 }
 
+// --- Health profile (conditions & medications) --------------------------
+let healthProfile = { conditions: [], medications: [] };
+let takenToday = [];
+
+async function loadHealthProfile() {
+  if (!currentUser) { healthProfile = { conditions: [], medications: [] }; takenToday = []; return; }
+  const [{ data: profile, error: profileError }, { data: checks, error: checksError }] = await Promise.all([
+    supabaseClient.from("health_profile").select("*").eq("user_id", currentUser.id).maybeSingle(),
+    supabaseClient.from("medication_checks").select("*").eq("user_id", currentUser.id).eq("date", dateKey()).maybeSingle()
+  ]);
+  if (profileError) console.error(profileError);
+  if (checksError) console.error(checksError);
+  healthProfile = { conditions: profile?.conditions || [], medications: profile?.medications || [] };
+  takenToday = checks?.taken_ids || [];
+}
+
+async function saveHealthProfile() {
+  const { error } = await supabaseClient.from("health_profile").upsert({
+    user_id: currentUser.id,
+    conditions: healthProfile.conditions,
+    medications: healthProfile.medications,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "user_id" });
+  if (error) console.error(error);
+}
+
+async function saveTakenToday() {
+  const { error } = await supabaseClient.from("medication_checks").upsert({
+    user_id: currentUser.id,
+    date: dateKey(),
+    taken_ids: takenToday
+  }, { onConflict: "user_id,date" });
+  if (error) console.error(error);
+}
+
+function renderConditions() {
+  const list = document.querySelector("#conditions-list");
+  list.innerHTML = healthProfile.conditions.length
+    ? healthProfile.conditions.map((condition, index) => `
+      <span class="tag-pill removable">${escapeHtml(condition)}<button type="button" data-remove-condition="${index}" aria-label="Remove ${escapeHtml(condition)}">×</button></span>
+    `).join("")
+    : `<span class="empty-note">Nothing added yet — add any conditions you'd like a quick reference for.</span>`;
+}
+
+function renderMedications() {
+  const list = document.querySelector("#med-list");
+  list.innerHTML = healthProfile.medications.length
+    ? healthProfile.medications.map(med => {
+        const taken = takenToday.includes(med.id);
+        return `
+        <div class="med-item${taken ? " taken" : ""}">
+          <input type="checkbox" data-med-id="${med.id}" ${taken ? "checked" : ""} aria-label="Mark ${escapeHtml(med.name)} as taken today">
+          <div class="med-text"><strong>${escapeHtml(med.name)}</strong><span>${[med.dosage, med.time ? `Reminder ${med.time}` : null].filter(Boolean).map(escapeHtml).join(" · ") || ""}</span></div>
+          <button type="button" class="remove-med" data-remove-med="${med.id}" aria-label="Remove ${escapeHtml(med.name)}">✕</button>
+        </div>`;
+      }).join("")
+    : `<span class="empty-note">No medications added yet — add one below to start checking them off daily.</span>`;
+}
+
+function renderHealth() { renderConditions(); renderMedications(); renderReminderStatus(); }
+
+document.querySelector("#condition-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const input = document.querySelector("#condition-input");
+  const value = input.value.trim();
+  if (!value) return;
+  healthProfile.conditions.push(value);
+  input.value = "";
+  renderConditions();
+  await saveHealthProfile();
+});
+
+document.querySelector("#conditions-list").addEventListener("click", async event => {
+  const button = event.target.closest("[data-remove-condition]");
+  if (!button) return;
+  healthProfile.conditions.splice(Number(button.dataset.removeCondition), 1);
+  renderConditions();
+  await saveHealthProfile();
+});
+
+document.querySelector("#medication-form").addEventListener("submit", async event => {
+  event.preventDefault();
+  const nameInput = document.querySelector("#med-name-input");
+  const dosageInput = document.querySelector("#med-dosage-input");
+  const timeInput = document.querySelector("#med-time-input");
+  const name = nameInput.value.trim();
+  if (!name) return;
+  healthProfile.medications.push({ id: crypto.randomUUID(), name, dosage: dosageInput.value.trim(), time: timeInput.value || null });
+  nameInput.value = "";
+  dosageInput.value = "";
+  timeInput.value = "";
+  renderMedications();
+  await saveHealthProfile();
+});
+
+document.querySelector("#med-list").addEventListener("change", async event => {
+  const checkbox = event.target.closest("[data-med-id]");
+  if (!checkbox) return;
+  const id = checkbox.dataset.medId;
+  takenToday = checkbox.checked ? [...takenToday, id] : takenToday.filter(item => item !== id);
+  renderMedications();
+  await saveTakenToday();
+});
+
+document.querySelector("#med-list").addEventListener("click", async event => {
+  const button = event.target.closest("[data-remove-med]");
+  if (!button) return;
+  const id = button.dataset.removeMed;
+  healthProfile.medications = healthProfile.medications.filter(med => med.id !== id);
+  takenToday = takenToday.filter(item => item !== id);
+  renderMedications();
+  await saveHealthProfile();
+  await saveTakenToday();
+});
+
+// --- Reminder notifications (only fire while this tab is open) ---------
+const notifiedToday = new Set();
+
+function renderReminderStatus() {
+  const el = document.querySelector("#reminder-status");
+  if (!("Notification" in window)) {
+    el.textContent = "This browser doesn't support notifications.";
+    return;
+  }
+  if (Notification.permission === "granted") {
+    el.textContent = "Reminders are on. Note: this only works while Kindly is open in a browser tab — it can't notify you if the tab or browser is closed.";
+  } else if (Notification.permission === "denied") {
+    el.textContent = "Notifications are blocked for this site in your browser settings. Re-enable them there to use reminders.";
+  } else {
+    el.innerHTML = `<button type="button" id="enable-reminders">Enable medication reminders</button> — only works while this tab stays open.`;
+    document.querySelector("#enable-reminders")?.addEventListener("click", async () => {
+      await Notification.requestPermission();
+      renderReminderStatus();
+    });
+  }
+}
+
+function checkReminders() {
+  if (!currentUser || !("Notification" in window) || Notification.permission !== "granted") return;
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  healthProfile.medications.forEach(med => {
+    if (!med.time || med.time !== hhmm) return;
+    const key = `${med.id}-${dateKey()}`;
+    if (takenToday.includes(med.id) || notifiedToday.has(key)) return;
+    notifiedToday.add(key);
+    new Notification("Medication reminder", { body: `Time to take ${med.name}${med.dosage ? ` (${med.dosage})` : ""}.` });
+  });
+}
+setInterval(checkReminders, 30000);
+
 // --- Auth UI ---------------------------------------------------------
 function showApp(show) {
   document.querySelector("#auth-view").classList.toggle("hidden", show);
   document.querySelector(".nav-tabs").classList.toggle("hidden", !show);
   document.querySelector("#export-button").classList.toggle("hidden", !show);
   document.querySelector("#signout-button").classList.toggle("hidden", !show);
-  document.querySelectorAll("#dashboard-view, #check-in-view, #history-view").forEach(el => {
+  document.querySelectorAll("#dashboard-view, #check-in-view, #history-view, #health-view").forEach(el => {
     if (!show) el.classList.add("hidden");
   });
 }
 
 async function handleAuthed() {
   showApp(true);
-  await refreshEntries();
+  await Promise.all([refreshEntries(), loadHealthProfile()]);
   render();
+  renderHealth();
   setView();
 }
 
