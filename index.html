@@ -18,6 +18,7 @@
         <a class="nav-tab active" href="#dashboard" data-view-link="dashboard">Overview</a>
         <a class="nav-tab" href="#check-in" data-view-link="check-in">Check-in</a>
         <a class="nav-tab" href="#history" data-view-link="history">History</a>
+        <a class="nav-tab" href="#health" data-view-link="health">Health</a>
       </nav>
       <button class="icon-button hidden" id="export-button" title="Export your data" aria-label="Export your data">↓</button>
       <button class="icon-button hidden" id="signout-button" title="Sign out" aria-label="Sign out">⏻</button>
@@ -108,6 +109,39 @@
       </div>
       <div class="history-summary" id="history-summary"></div>
       <div class="history-list" id="history-list"></div>
+    </section>
+
+    <section id="health-view" class="view hidden">
+      <div class="page-heading compact">
+        <p class="eyebrow">Your profile</p>
+        <h1>Conditions &amp;<br><em>medications.</em></h1>
+        <p>Keep a running reference of what you manage, and check off today's doses as you take them.</p>
+      </div>
+
+      <div class="section-heading">
+        <div><p class="eyebrow">Reference</p><h2>Known conditions</h2></div>
+      </div>
+      <article class="profile-card">
+        <div class="tag-pills wrap-left" id="conditions-list"></div>
+        <form id="condition-form" class="inline-add-form">
+          <input id="condition-input" type="text" placeholder="e.g. Migraine, IBS, Asthma" maxlength="60">
+          <button class="secondary-button" type="submit">Add</button>
+        </form>
+      </article>
+
+      <div class="section-heading">
+        <div><p class="eyebrow">Check off as you go</p><h2>Today's medications</h2></div>
+      </div>
+      <article class="profile-card">
+        <div class="med-list" id="med-list"></div>
+        <form id="medication-form" class="inline-add-form med-add-form">
+          <input id="med-name-input" type="text" placeholder="Medication name" maxlength="60" required>
+          <input id="med-dosage-input" type="text" placeholder="Dosage / instructions (optional)" maxlength="80">
+          <label class="time-field"><span>Reminder</span><input id="med-time-input" type="time"></label>
+          <button class="secondary-button" type="submit">Add medication</button>
+        </form>
+        <div class="reminder-status" id="reminder-status"></div>
+      </article>
     </section>
   </main>
   <footer><span>Kindly</span><span>Private by default · Not medical advice</span></footer>
