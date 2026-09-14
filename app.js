@@ -169,14 +169,20 @@ document.querySelector("#auth-form").addEventListener("submit", async event => {
   const password = document.querySelector("#auth-password").value;
   const message = document.querySelector("#auth-message");
   message.textContent = "One moment...";
-  const { error } = authMode === "signin"
+  const { data, error } = authMode === "signin"
     ? await supabaseClient.auth.signInWithPassword({ email, password })
     : await supabaseClient.auth.signUp({ email, password });
   if (error) {
     message.textContent = error.message;
     return;
   }
-  message.textContent = authMode === "signup" ? "Check your email to confirm your account, then sign in." : "";
+  if (authMode === "signup") {
+    message.textContent = "Check your email to confirm your account, then sign in.";
+    return;
+  }
+  message.textContent = "";
+  currentUser = data.user;
+  handleAuthed();
 });
 
 document.querySelector("#signout-button").addEventListener("click", () => supabaseClient.auth.signOut());
